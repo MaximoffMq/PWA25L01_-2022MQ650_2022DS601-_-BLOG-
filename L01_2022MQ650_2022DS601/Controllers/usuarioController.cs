@@ -87,5 +87,56 @@ namespace L01_2022MQ650_2022DS601.Controllers
             return Ok(usuario);
         }
 
+        [HttpGet]
+        [Route("GetByNombreApellido")]
+        public IActionResult GetByNombreApellido(string? nombre, string? apellido)
+        {
+            var usuariosFiltrados = _usuarioC.usuarios
+                .Where(u => (nombre == null || u.Nombre.Contains(nombre)) &&
+                            (apellido == null || u.Apellido.Contains(apellido)))
+                .ToList();
+
+            if (usuariosFiltrados.Count == 0)
+                return NotFound();
+
+            return Ok(usuariosFiltrados);
+        }
+
+        [HttpGet]
+        [Route("GetByRol/{rolId}")]
+        public IActionResult GetByRol(int rolId)
+        {
+            var usuariosPorRol = _usuarioC.usuarios
+                .Where(u => u.RolId == rolId)
+                .ToList();
+
+            if (usuariosPorRol.Count == 0)
+                return NotFound();
+
+            return Ok(usuariosPorRol);
+        }
+
+        [HttpGet]
+        [Route("GetTopUsuariosComentarios/{topN}")]
+        public IActionResult GetTopUsuariosComentarios(int topN)
+        {
+            var topUsuarios = _usuarioC.usuarios
+                .Join(_usuarioC.comentarios,
+                      u => u.UsuarioId,
+                      c => c.UsuarioId,
+                      (u, c) => new { u.UsuarioId, u.NombreUsuario })
+                .GroupBy(x => new { x.UsuarioId, x.NombreUsuario })
+                .Select(g => new { UsuarioId = g.Key.UsuarioId, NombreUsuario = g.Key.NombreUsuario, TotalComentarios = g.Count() })
+                .OrderByDescending(u => u.TotalComentarios)
+                .Take(topN)
+                .ToList();
+
+            if (topUsuarios.Count == 0)
+                return NotFound();
+
+            return Ok(topUsuarios);
+        }
+
+
     }
 }
